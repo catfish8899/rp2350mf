@@ -1,0 +1,11 @@
+RP2350_Auto_Framework/
+│
+├── core/                       # 核心复用模块文件夹
+│   ├── __init__.py             # 空文件即可
+│   ├── controller.py           # 硬件通信模块
+│   ├── vision.py               # 视觉识别模块
+│   ├── action.py               # 拟人化动作模块
+│   └── input_engine.py         # 复杂输入模块
+│
+├── config.py                   # 统一配置文件
+└── main_task.py                # 主任务执行脚本

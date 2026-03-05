@@ -1,0 +1,81 @@
+树莓派 RP2350 硬件级自动化框架调用说明书
+--------------------------------------------------------------------------------------
+0. 模块导入与初始化
+在编写任何业务脚本（如 main_task.py）之前，需要先导入核心模块并初始化硬件控制器
+
+python示例：
+import config
+from core.controller import RP2350Controller
+from core.vision import find_image_on_screen
+from core.action import smooth_move_to
+from core.input_engine import set_clipboard_text, get_clipboard_text, hardware_type_from_clipboard, hardware_type_complex_string
+
+# 初始化硬件控制器 (连接树莓派)
+hw_controller = RP2350Controller(config.COM_PORT, config.BAUD_RATE)
+
+# 任务结束后，务必关闭连接释放串口
+# hw_controller.close()
+--------------------------------------------------------------------------------------
+1. 鼠标控制功能 (hw_controller 调用)
+所有鼠标动作均由硬件发出
+
+1.1 基础点击操作
+hw_controller.left_click()：左键单击。
+hw_controller.left_double_click()：左键双击（自带拟人化随机间隔）。
+hw_controller.right_click()：右键单击（常用于呼出菜单）。
+hw_controller.middle_click()：滚轮中键单击。
+1.2 拖拽与长按操作
+hw_controller.left_press()：左键按住（不松开，准备拖拽）。
+hw_controller.left_release()：左键松开（结束拖拽）。
+hw_controller.right_press() / hw_controller.right_release()：右键按住 / 松开。
+hw_controller.middle_press() / hw_controller.middle_release()：中键按住 / 松开。
+1.3 滚轮与侧键操作
+hw_controller.scroll_up(lines=1)：滚轮向上滚动指定行数（默认1）。
+hw_controller.scroll_down(lines=1)：滚轮向下滚动指定行数（默认1）。
+hw_controller.page_backward()：鼠标侧键-向后翻页（常用于浏览器返回）。
+hw_controller.page_forward()：鼠标侧键-向前翻页。
+1.4 相对移动 (底层)
+hw_controller.send_move(dx, dy)：鼠标指针相对当前位置移动 dx, dy 像素。
+--------------------------------------------------------------------------------------
+2. 键盘控制功能 (hw_controller 调用)
+2.1 基础按键与快捷键
+hw_controller.key_click(key_name)：单按键敲击（按下并迅速松开）。
+常用 key_name：'enter', 'space', 'backspace', 'tab', 'esc', 'a', 'c', 'v' 等。
+hw_controller.shortcut(*keys)：发送组合快捷键。
+示例：hw_controller.shortcut('ctrl', 'c') (复制)
+示例：hw_controller.shortcut('ctrl', 'shift', 'esc') (打开任务管理器)
+2.2 长按与松开
+hw_controller.key_press(key_name)：按住某个键不放。
+示例：hw_controller.key_press('shift') (准备连选文件)
+hw_controller.key_release(key_name)：松开某个键。
+2.3 纯英文/数字快速输入
+hw_controller.send_text(text)：快速输入纯 ASCII 字符（不支持中文）。
+--------------------------------------------------------------------------------------
+3. 高级输入与剪贴板功能
+用于解决软件不允许复制粘贴的问题
+
+3.1 剪贴板操作 (Python 层面)
+set_clipboard_text(text)：将字符串写入 Windows 系统剪贴板。
+get_clipboard_text()：读取当前 Windows 系统剪贴板的内容。
+3.2 硬件级防屏蔽输入 (黑科技)
+hardware_type_complex_string(hw_controller, content)：
+功能：将包含中、英、数、符号的混合字符串 content，通过硬件键盘逐字打出来，中文会使用小狼毫+雾凇拼音的 U 模式（Unicode）输入。
+hardware_type_from_clipboard(hw_controller)：
+功能：自动读取当前剪贴板的内容，并调用上述的硬件级逐字输入逻辑打出来。
+最佳实践：先用 set_clipboard_text() 准备好长文本，再调用此函数进行物理级输出。
+--------------------------------------------------------------------------------------
+4. 视觉与拟人化辅助功能
+4.1 屏幕找图
+find_image_on_screen(template_path, threshold=0.8)：
+功能：在主屏幕上寻找目标图片。
+返回值：如果找到，返回图片中心点的绝对坐标 (x, y)；如果未找到，返回 None。
+4.2 拟人化平滑移动
+smooth_move_to(hw_controller, target_x, target_y)：
+功能：将鼠标从当前位置平滑、带有加减速阻尼地移动到绝对坐标 (target_x, target_y)。
+--------------------------------------------------------------------------------------
+附录：当前支持的特殊按键映射表
+如果在 shortcut 或 key_click 中需要使用特殊按键，请参考以下名称（需与树莓派 code.py 中的 KEY_MAP 对应）：
+
+控制键：'ctrl', 'shift', 'alt'
+功能键：'enter', 'space', 'backspace', 'tab', 'esc'
+字母键：'a', 'c', 'v', 'x', 'z', 'u' (如需扩充，请修改树莓派的 code.py)
