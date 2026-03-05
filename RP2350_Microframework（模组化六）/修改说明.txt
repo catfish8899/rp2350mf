@@ -1,0 +1,1 @@
+在此版本中支持了PyInstaller打包

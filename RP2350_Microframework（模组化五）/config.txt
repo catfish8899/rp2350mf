@@ -1,0 +1,19 @@
+[Settings]
+# 待读取的Excel文件路径
+EXCEL_PATH = 模拟1.xlsx
+
+# 图像识别的严谨度 (0.0 到 1.0)
+MATCH_THRESHOLD = 0.8
+
+# 每一步寻找目标的耐心值（秒）
+TIMEOUT_SECONDS = 10
+
+# RP2350 的实际端口号
+COM_PORT = COM3
+
+# 串口通信速率
+BAUD_RATE = 115200
+
+[Images]
+# 截图路径配置，按顺序对应Excel中的项，用英文逗号分隔
+IMAGE_PATHS = img_1.png, img_2.png, img_3.png, img_4.png, img_5.png, img_6.png, img_7.png, img_8.png

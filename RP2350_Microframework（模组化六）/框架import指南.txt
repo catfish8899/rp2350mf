@@ -1,0 +1,110 @@
+===================================================================================
+RP2350 硬件级自动化微框架 - 核心模块 Import 调用指南
+===================================================================================
+
+本指南旨在帮助开发者在仅修改 `main_task.py` 的情况下，快速调用微框架底层的全部核心功能。
+所有核心模块均位于 `core/` 目录下，请在 `main_task.py` 顶部使用 `from ... import ...` 语法进行引入。
+
+-----------------------------------------------------------------------------------
+1. 硬件通信控制器 (core.controller)
+-----------------------------------------------------------------------------------
+负责与 RP2350 硬件建立底层通信，并下发物理级的键鼠指令。
+
+【引入语句】
+from core.controller import RP2350Controller
+
+【核心调用】
+# 初始化控制器 (需传入 config.json 中的 COM_PORT 和 BAUD_RATE)
+hw_controller = RP2350Controller(port="COM5", baud_rate=115200)
+
+# 鼠标操作
+hw_controller.left_click()          # 左键单击
+hw_controller.left_double_click()   # 左键双击 (带拟人化延迟)
+hw_controller.right_click()         # 右键单击
+hw_controller.scroll_up(3)          # 滚轮向上滚动3个单位
+hw_controller.scroll_down(3)        # 滚轮向下滚动3个单位
+
+# 键盘操作
+hw_controller.key_click('enter')    # 单击指定按键 (如 'enter', 'space', 'esc')
+hw_controller.shortcut('ctrl', 'c') # 触发组合快捷键
+hw_controller.send_text('Hello')    # 快速输入纯英文/数字文本流
+
+# 资源释放 (必须在任务结束或异常捕获的 finally 块中调用)
+hw_controller.close()
+
+
+-----------------------------------------------------------------------------------
+2. 视觉识别引擎 (core.vision)
+-----------------------------------------------------------------------------------
+提供基于 OpenCV 的屏幕特征扫描与坐标定位功能。
+
+【引入语句】
+from core.vision import wait_and_find_image_with_retry, find_image_on_screen
+
+【核心调用】
+# 阻塞式扫描 (推荐)：带超时控制与人工干预机制
+coords = wait_and_find_image_with_retry(image_path="img_1.png", timeout=10, threshold=0.8)
+
+# 单次扫描 (进阶)：仅执行一次特征匹配，成功返回 (x, y)，失败返回 None
+coords = find_image_on_screen(template_path="img_1.png", threshold=0.8)
+
+
+-----------------------------------------------------------------------------------
+3. 拟人化动作引擎 (core.action)
+-----------------------------------------------------------------------------------
+提供规避软件检测的平滑鼠标轨迹规划算法。
+
+【引入语句】
+from core.action import smooth_move_to, get_current_mouse_pos
+
+【核心调用】
+# 拟人化平滑移动 (需传入硬件控制器实例及目标绝对坐标)
+smooth_move_to(hw_controller, target_x=1920, target_y=1080)
+
+# 获取当前鼠标物理坐标
+current_x, current_y = get_current_mouse_pos()
+
+
+-----------------------------------------------------------------------------------
+4. 复杂输入引擎 (core.input_engine)
+-----------------------------------------------------------------------------------
+处理系统剪贴板交互，并提供针对反自动化软件的“硬件级混合输入”策略。
+
+【引入语句】
+from core.input_engine import set_clipboard_text, get_clipboard_text, hardware_type_from_clipboard
+
+【核心调用】
+# 剪贴板读写
+set_clipboard_text("待输入的中文字符串")
+text = get_clipboard_text()
+
+# 硬件级混合输入 (黑科技)：
+# 读取剪贴板内容，并将其转化为物理键盘敲击序列（自动处理中英文切换与输入法 U 模式）。
+# 专用于破解目标软件禁用 Ctrl+V 粘贴权限的场景。
+hardware_type_from_clipboard(hw_controller)
+
+
+-----------------------------------------------------------------------------------
+【综合调用示例】
+-----------------------------------------------------------------------------------
+from core.controller import RP2350Controller
+from core.vision import wait_and_find_image_with_retry
+from core.action import smooth_move_to
+from core.input_engine import set_clipboard_text, hardware_type_from_clipboard
+
+# 1. 初始化
+hw = RP2350Controller("COM5")
+
+# 2. 视觉定位
+coords = wait_and_find_image_with_retry("target.png", 10)
+if coords:
+    # 3. 拟人化移动并点击
+    smooth_move_to(hw, coords[0], coords[1])
+    hw.left_click()
+    
+    # 4. 硬件级输入
+    set_clipboard_text("测试数据123")
+    hardware_type_from_clipboard(hw)
+
+# 5. 释放资源
+hw.close()

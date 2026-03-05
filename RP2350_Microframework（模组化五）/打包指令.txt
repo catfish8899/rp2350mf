@@ -1,0 +1,6 @@
+dist 文件夹----使用里面的.exe
+build 文件夹----是临时文件，可删
+.spec 文件----是配置文件，可删
+
+在main_task.py根目录下运行：
+pyinstaller -F -c main_task.py

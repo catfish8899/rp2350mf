@@ -1,0 +1,2 @@
+在控制台复制粘贴这条库安装命令：
+pip install pandas pyserial pyperclip opencv-python numpy mss openpyxl pyinstaller
